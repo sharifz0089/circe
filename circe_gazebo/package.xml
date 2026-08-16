@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>circe_gazebo</name>
+  <version>0.1.0</version>
+  <description>
+    Gazebo Harmonic simulation of CIRCE. Substitutes for the hardware layer only:
+    circe_sim.launch.py replaces rover.launch.py and sensors.launch.py, while the
+    EKF, SLAM and Nav2 layers in circe_nav are reused unchanged with use_sim_time.
+  </description>
+  <maintainer email="sz1305568@gmail.com">sharif</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- circe_sim.launch.py: gz server/gui and the spawn entity -->
+  <exec_depend>ros_gz_sim</exec_depend>
+
+  <!-- circe_sim.launch.py: parameter_bridge, configured by config/gz_bridge.yaml -->
+  <exec_depend>ros_gz_bridge</exec_depend>
+
+  <!-- circe_sim.launch.py: the robot model, expanded with sim_mode:=true -->
+  <exec_depend>circe_description</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <!-- circe_sim_nav.launch.py includes localization/slam/navigation from circe_nav -->
+  <exec_depend>circe_nav</exec_depend>
+
+  <!--
+    Deliberate NON-dependencies:
+
+    ros_gz_image  - image_bridge is the faster path for the two Image topics, but it
+                    carries neither camera_info nor the point cloud, so everything goes
+                    through one parameter_bridge instead. Add it only if image
+                    throughput actually becomes the bottleneck.
+    circe_bringup - starts the real motor driver and the real sensor drivers. Nothing
+                    in it is reusable under Gazebo, and circe_bringup.launch.py cannot
+                    propagate use_sim_time anyway (it declares no such argument).
+    circe_control - joy teleop needs a physical gamepad. Drive the sim with
+                    `ros2 run teleop_twist_keyboard teleop_twist_keyboard` instead.
+  -->
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
