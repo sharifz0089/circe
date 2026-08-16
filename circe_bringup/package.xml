@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>circe_bringup</name>
+  <version>0.1.0</version>
+  <description>
+    Hardware bring-up for CIRCE: Rover Zero 4WD base, RPLidar A1, RealSense D456.
+    Owns the device parameter files, the udev rules, and the top-level layered
+    launch entry point.
+  </description>
+  <maintainer email="sz1305568@gmail.com">sharif</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Robot model, consumed by rover.launch.py via xacro. -->
+  <exec_depend>circe_description</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+
+  <!-- Rover Zero 4WD motor driver. -->
+  <exec_depend>roverrobotics_driver</exec_depend>
+
+  <!-- Sensor drivers. Upstream's accessories.launch.py referenced both of these
+       without declaring either, so `rosdep install` never pulled them. Declared
+       here so a fresh clone of this workspace is actually complete. -->
+  <exec_depend>sllidar_ros2</exec_depend>
+  <exec_depend>realsense2_camera</exec_depend>
+
+  <!-- Layers composed by circe_bringup.launch.py. -->
+  <exec_depend>circe_nav</exec_depend>
+  <exec_depend>circe_control</exec_depend>
+
+  <!-- bench_mode's static odom -> base_link. -->
+  <exec_depend>tf2_ros</exec_depend>
+
+  <!-- Deliberately NOT declared: `bno055`. No BNO055 is fitted, the package is not
+       installed and not in circe.repos, and use_imu defaults to false. Declaring it
+       would make `rosdep install` fail on every fresh clone for a sensor nobody has.
+       Add it here if and when the hardware is fitted. -->
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

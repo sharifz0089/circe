@@ -1,0 +1,208 @@
+# Intel RealSense D456 -- driver: realsense2_camera / realsense2_camera_node
+#
+# Split out of roverrobotics_driver/config/accessories.yaml. The upstream `active:`
+# flag is gone: use the `use_camera` launch argument on
+# circe_bringup/launch/sensors.launch.py instead.
+#
+# The D456 is the IP65 / M12-connector variant of the D455: same optics, same 95 mm
+# baseline, same IMU, same 400-series SDK. It enumerates as a D455 and is modelled by
+# realsense2_description's sensor_d455 macro.
+#
+# Top-level key is the `/**` wildcard deliberately -- the node runs as /camera/camera
+# (namespace `camera` + name `camera`), and hardcoding that fully-qualified name here
+# means a namespace change silently drops every value below with no error.
+#
+# The three values that were patched into realsense-ros' rs_launch.py in the old
+# workspace live here instead (enable_color, align_depth.enable,
+# hole_filling_filter.enable), which is why realsense-ros can stay pristine.
+
+/**:
+  ros__parameters:
+    accel_fps: 100
+    accel_info_qos: DEFAULT
+    accel_qos: SENSOR_DATA
+    # Aligned depth is what the depth->laserscan obstacle layer will consume.
+    align_depth:
+      enable: true
+      frames_queue_size: 16
+    angular_velocity_cov: 0.01
+    base_frame_id: "link"
+    odom_frame_id: "odom"
+    camera_name: "camera"
+    clip_distance: -1.0
+    color_info_qos: DEFAULT
+    color_qos: SYSTEM_DEFAULT
+    colorizer:
+      color_scheme: 0
+      enable: false
+      frames_queue_size: 16
+      histogram_equalization_enabled: true
+      max_distance: 6.0
+      min_distance: 0.0
+      stream_filter: 1
+      stream_format_filter: 1
+      stream_index_filter: -1
+      visual_preset: 0
+    decimation_filter:
+      enable: false
+      filter_magnitude: 2
+      frames_queue_size: 16
+      stream_filter: 1
+      stream_format_filter: 1
+      stream_index_filter: -1
+    depth_info_qos: DEFAULT
+    depth_module:
+      auto_exposure_roi:
+        bottom: 479
+        left: 0
+        right: 639
+        top: 0
+      emitter_always_on: false
+      emitter_enabled: 1
+      emitter_on_off: false
+      enable_auto_exposure: true
+      error_polling_enabled: true
+      exposure: 8500
+      frames_queue_size: 16
+      gain: 16
+      global_time_enabled: true
+      hdr_enabled: false
+      inter_cam_sync_mode: 0
+      laser_power: 150.0
+      output_trigger_enabled: false
+      profile: 848x480x15
+      sequence_id: 0
+      sequence_name: 0
+      sequence_size: 2
+      visual_preset: 0
+      # 848x480 is the D455/D456 native depth resolution -- best depth quality.
+      # 15 fps keeps USB bandwidth and onboard CPU load down.
+    depth_qos: SYSTEM_DEFAULT
+    device_type: ''
+    diagnostics_period: 0.0
+    disparity_filter:
+      enable: false
+    disparity_to_depth:
+      enable: false
+    enable_accel: true
+    enable_color: true
+    enable_depth: true
+    enable_gyro: true
+    # Raw IR streams are not used for navigation -- off to save USB bandwidth.
+    # Turn them back on if you need them for stereo debugging.
+    enable_infra1: false
+    enable_infra2: false
+    enable_sync: false
+    filter_by_sequence_id:
+      enable: false
+      frames_queue_size: 16
+      sequence_id: 1
+    gyro_fps: 200
+    gyro_info_qos: DEFAULT
+    gyro_qos: SENSOR_DATA
+    hdr_merge:
+      enable: false
+      frames_queue_size: 16
+    hold_back_imu_for_frames: false
+    # NOTE -- the two CIRCE customizations in the old workspace disagreed here.
+    # accessories.yaml said false; the rs_launch.py patch said true. Only
+    # accessories.yaml was on the code path actually used (accessories.launch.py ran
+    # the node directly and never sourced rs_launch.py), so false is what the robot
+    # really did, and false is preserved here.
+    # Enabling it is a reasonable thing to want once depth feeds an obstacle layer:
+    # it fills small holes in the depth image, at the cost of inventing geometry that
+    # the sensor did not measure. Decide it on purpose, with the costmap in view.
+    hole_filling_filter:
+      enable: false
+      frames_queue_size: 16
+      holes_fill: 1
+      stream_filter: 1
+      stream_format_filter: 1
+      stream_index_filter: -1
+    infra1_info_qos: DEFAULT
+    infra1_qos: SYSTEM_DEFAULT
+    infra2_info_qos: DEFAULT
+    infra2_qos: SYSTEM_DEFAULT
+    # Reset the device on startup -- avoids the common "no frames arrived" failure
+    # when the node is restarted without replugging the camera. Costs ~2s at boot.
+    initial_reset: true
+    json_file_path: ''
+    linear_accel_cov: 0.01
+    motion_module:
+      enable_motion_correction: true
+      frames_queue_size: 16
+      global_time_enabled: true
+    pointcloud:
+      allow_no_texture_points: false
+      enable: false
+      filter_magnitude: 2
+      frames_queue_size: 16
+      ordered_pc: false
+      pointcloud_qos: DEFAULT
+      stream_filter: 0
+      stream_format_filter: 0
+      stream_index_filter: -1
+    publish_odom_tf: false
+    publish_tf: true
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+      /tf_static:
+        publisher:
+          depth: 1
+          history: keep_last
+          reliability: reliable
+    reconnect_timeout: 6.0
+    rgb_camera:
+      auto_exposure_priority: false
+      auto_exposure_roi:
+        bottom: 479
+        left: 0
+        right: 639
+        top: 0
+      backlight_compensation: false
+      brightness: 0
+      contrast: 50
+      enable_auto_exposure: true
+      enable_auto_white_balance: true
+      exposure: 166
+      frames_queue_size: 16
+      gain: 64
+      gamma: 300
+      global_time_enabled: true
+      hue: 0
+      power_line_frequency: 3
+      profile: 848x480x15
+      saturation: 64
+      sharpness: 50
+      white_balance: 4600.0
+    rosbag_filename: ''
+    serial_no: ''
+    spatial_filter:
+      enable: false
+      filter_magnitude: 2
+      filter_smooth_alpha: 0.5
+      filter_smooth_delta: 20
+      frames_queue_size: 16
+      holes_fill: 0
+      stream_filter: 1
+      stream_format_filter: 1
+      stream_index_filter: -1
+    temporal_filter:
+      enable: false
+      filter_smooth_alpha: 0.4000000059604645
+      filter_smooth_delta: 20
+      frames_queue_size: 16
+      holes_fill: 3
+      stream_filter: 1
+      stream_format_filter: 1
+      stream_index_filter: -1
+    tf_publish_rate: 0.0
+    unite_imu_method: 2
+    usb_port_id: ''
+    use_sim_time: false
+    wait_for_device_timeout: -1.0

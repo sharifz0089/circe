@@ -1,0 +1,111 @@
+# ros_gz_bridge configuration for CIRCE under Gazebo Harmonic.
+#
+# Loaded by circe_sim.launch.py as the parameter_bridge's config_file.
+#
+# *** THE ONE RULE: DO NOT BRIDGE /tf ***
+# The upstream roverrobotics_gazebo bridge has a
+#   "/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V"
+# line. Copying it would put the gz DiffDrive plugin's odom -> base_link onto /tf
+# alongside the robot_localization EKF, giving that edge two publishers. The whole
+# workspace is organised around one publisher per edge (see the frame ownership table
+# in the README), and two publishers on odom -> base_link is exactly the bug the old
+# circe_tf package caused. The plugin's TF is parked on /tf_gazebo instead and is
+# intentionally absent from this file. If TF starts jittering in sim, check here first.
+#
+# *** MESSAGE TYPE NAMES ***
+# Jazzy's bridge knows gz.msgs.* only. The upstream config is half-migrated and still
+# says ignition.msgs.Twist / .Clock / .Odometry / .Pose_V; those rows are silently
+# rejected and the topic simply never appears.
+#
+# *** CAMERA TOPIC RENAMING ***
+# gz derives four topics from the rgbd_camera's single <topic>camera/camera</topic>
+# root, and none of them match the realsense2_camera driver's names. The rows below use
+# a different ros_topic_name from gz_topic_name so that what lands in ROS is
+# byte-identical in naming to the hardware, and RViz configs, costmap params and bag
+# files all work either way. Change the xacro's <topic> and you must change these.
+
+# ---------------------------------------------------------------------------
+# Clock. Bridge this first: use_sim_time is meaningless without it, and every
+# downstream node will sit at time zero waiting.
+# ---------------------------------------------------------------------------
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+# ---------------------------------------------------------------------------
+# Base. Unstamped Twist, matching both the gz DiffDrive plugin and the real
+# roverrobotics_driver; nav2's enable_stamped_cmd_vel is pinned false to agree.
+# ---------------------------------------------------------------------------
+- ros_topic_name: "/cmd_vel"
+  gz_topic_name: "/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: ROS_TO_GZ
+
+# Consumed by the EKF as odom0. This is the sim stand-in for what
+# roverrobotics_driver publishes on hardware.
+- ros_topic_name: "/odometry/wheels"
+  gz_topic_name: "/odometry/wheels"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+# gz publishes joint state as a Model message, not a JointState.
+- ros_topic_name: "/joint_states"
+  gz_topic_name: "/joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "gz.msgs.Model"
+  direction: GZ_TO_ROS
+
+# ---------------------------------------------------------------------------
+# Lidar. Feeds slam_toolbox and both Nav2 costmaps.
+# ---------------------------------------------------------------------------
+- ros_topic_name: "/scan"
+  gz_topic_name: "/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+# ---------------------------------------------------------------------------
+# IMU. Gives the EKF's imu0 input a publisher, which it does not have on the
+# real robot (no BNO055 fitted).
+# ---------------------------------------------------------------------------
+- ros_topic_name: "/imu/data"
+  gz_topic_name: "/imu/data"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+# ---------------------------------------------------------------------------
+# Camera. Visualisation only: no Nav2 costmap subscribes to any of these.
+# ROS names deliberately mirror realsense2_camera's.
+# ---------------------------------------------------------------------------
+- ros_topic_name: "/camera/camera/color/image_raw"
+  gz_topic_name: "/camera/camera/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/camera/camera/color/camera_info"
+  gz_topic_name: "/camera/camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/camera/camera/depth/image_rect_raw"
+  gz_topic_name: "/camera/camera/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+# On hardware this cloud is DISABLED (realsense_d456.yaml sets pointcloud.enable
+# false). It is bridged here because it is the most useful thing to look at in RViz
+# when checking camera mounting, and because nothing consumes it, it costs only
+# bandwidth. The name matches what the driver would publish if enabled.
+- ros_topic_name: "/camera/camera/depth/color/points"
+  gz_topic_name: "/camera/camera/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  direction: GZ_TO_ROS
